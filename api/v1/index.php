@@ -557,7 +557,7 @@ if ('' == $api_request[sizeof($api_request) - 1])
 	array_pop($api_request);
 }
 
-if(implode('/',$api_request) != "drive/auth" && implode('/',$api_request) != "drive/unauthorize" && implode('/',$api_request) != "drive/upload"){
+if(implode('/',$api_request) != "drive/auth"){
 	// HTTP Authentication
 	if (!isset($_SERVER['PHP_AUTH_USER'])) 
 	{
@@ -770,7 +770,7 @@ else if ('casenotes' == $api_request[0])
 }
 
 else if ('drive' == $api_request[0]){
-	$driveExtensionPath = '../../' . $site_folder_name . '-custom/extensions/google_drive_connector/index.php';
+	$driveExtensionPath = '../../' . $site_folder_name . '-custom/extensions/google_connector/index.php';
 
 	if(!file_exists($driveExtensionPath)){
 		http_response_code(405);
@@ -809,7 +809,7 @@ else if ('drive' == $api_request[0]){
 					break;
 
 				case 'unauthorize':
-					$rest->unauthorize(htmlspecialchars($_GET['username']));
+					$rest->unauthorize($username);
 					break;
 
 				default:
