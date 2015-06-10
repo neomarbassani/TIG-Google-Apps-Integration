@@ -9,11 +9,12 @@ require_once 'google-api-php-client/src/contrib/Google_DriveService.php';
 	<?php
 	define("CLIENT_ID", 'abc123');
 	define("CLIENT_SECRET", 'def456');
+	define("UNIQUE_FOLDER_ID", "ghi789");
 	?>
 */
-require_once('/var/www/html/cms-custom/extensions/google_drive_connector/google_drive_config.php');
+require_once('/var/www/html/api/v1/google_drive_config.php');
 
-$url_array = explode('?', 'http://'.$_SERVER ['HTTP_HOST'].$_SERVER['REQUEST_URI']);
+$url_array = explode('?', 'https://'.$_SERVER ['HTTP_HOST'].$_SERVER['REQUEST_URI']);
 define("URL", $url_array[0]);
 define("TOKENS_PATH", dirname(__FILE__) . '/' . "tokens/");
 
