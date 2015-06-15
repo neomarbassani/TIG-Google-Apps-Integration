@@ -770,7 +770,7 @@ else if ('casenotes' == $api_request[0])
 }
 
 else if ('drive' == $api_request[0]){
-	$driveExtensionPath = '../../' . $site_folder_name . '-custom/extensions/google_connector/index.php';
+	$driveExtensionPath = '../../' . $site_folder_name . '-custom/extensions/google_drive_connector/index.php';
 
 	if(!file_exists($driveExtensionPath)){
 		http_response_code(405);
