@@ -413,6 +413,8 @@ class restCaseList extends restResourceList
 		}else{
 			$extra_sql.= " and loggedUser.user_id = users.user_id ";
 		}
+		
+		$extra_sql .= " ORDER BY open_date DESC "
 
 		parent::get($extra_sql);
 	}
