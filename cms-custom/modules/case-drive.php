@@ -28,7 +28,10 @@ function folder_search_or_create($folder_name, $parent_id)
 	return $z['id'];
 }
 
-if (strlen($case1->google_drive_folder_id) == 0 && !file_exists(getcwd() . "-custom/extensions/google_drive_connector/tokens/{$auth_row['username']}"))
+// This object is used to determine if Pika CMS user is logged into Google Apps.
+$tmp_user = new pikaUser($auth_row['user_id']);
+
+if (strlen($case1->google_drive_folder_id) == 0 && strlen($tmp_user->google_drive_token) == 0)
 {
 	// Bail out to prevent errors when folder_search_or_create is run.
 	$clean_username = htmlspecialchars($auth_row['username']);
@@ -69,7 +72,7 @@ else
 	// I don't have permission to edit pikaDrive on dev server at the moment, this
 	// is a work around.
 	//if (pikaDrive::isAuthenticated($auth_row["username"]))
-	if (file_exists(getcwd() . "-custom/extensions/google_drive_connector/tokens/{$auth_row['username']}"))
+	if (strlen($tmp_user->google_drive_token) > 0)
 	{
 		$C .= '
 		<form method="post" enctype="multipart/form-data" action="">
