@@ -1,18 +1,7 @@
 <?php
 require_once 'google-api-php-client/src/Google_Client.php';
 require_once 'google-api-php-client/src/contrib/Google_DriveService.php';
-
-
-/* The Google Drive configuration file should define the client_id and 
-	client_secret is this format:
-	
-	<?php
-	define("CLIENT_ID", 'abc123');
-	define("CLIENT_SECRET", 'def456');
-	define("UNIQUE_FOLDER_ID", "ghi789");
-	?>
-*/
-require_once('/var/www/html/api/v1/google_drive_config.php');
+require_once 'google_config.php';
 
 $url_array = explode('?', 'https://'.$_SERVER ['HTTP_HOST'].$_SERVER['REQUEST_URI']);
 define("URL", $url_array[0]);
@@ -68,6 +57,10 @@ class PikaDrive {
   }
 
   function createFolder($folderName, $parentId = null){
+    if(empty($parentId) && defined('UNIQUE_FOLDER_ID')){
+      $parentId = UNIQUE_FOLDER_ID;
+    }
+
     return self::uploadFile("", $folderName, $parentId);
   }
 
