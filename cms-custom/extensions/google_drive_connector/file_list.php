@@ -86,7 +86,11 @@ function file_list($folder_id = null, $prev_folder_id, $root_folder_id, $args = 
 	require_once('pikaDocument.php');
 	require_once('pikaUser.php');
 	
-	
+	if (!isset($tmp_user))
+	{
+		// This object is used to determine if Pika CMS user is logged into Google Apps.
+		$tmp_user = new pikaUser($auth_row['user_id']);	
+	}
 	
 	require_once(getcwd() . '-custom/extensions/google_drive_connector/index.php');
 	
@@ -99,7 +103,7 @@ function file_list($folder_id = null, $prev_folder_id, $root_folder_id, $args = 
 		// I don't have permission to edit pikaDrive on dev server at the moment, this
 		// is a work around.
 		//if (pikaDrive::isAuthenticated($auth_row["username"]))
-		if (file_exists(getcwd() . '-custom/extensions/google_drive_connector/tokens/' . $auth_row['username']))
+		if (strlen($tmp_user->google_drive_token) > 0)
 		{			
 			if ($folder_id != $root_folder_id)
 			{	
@@ -407,7 +411,7 @@ function file_list($folder_id = null, $prev_folder_id, $root_folder_id, $args = 
 		// I don't have permission to edit pikaDrive on dev server at the moment, this
 		// is a work around.
 		//if (pikaDrive::isAuthenticated($auth_row["username"]))
-		if (file_exists(getcwd() . '-custom/extensions/google_drive_connector/tokens/' . $auth_row['username']))
+		if (strlen($tmp_user->google_drive_token) > 0)
 		{
 			// Add a "Log out of Google Drive" button at the bottom
 			$file_list_output .= '<a class="btn btn-mini" href="/api/v1/drive/unauthorize?username=' ;
