@@ -11,10 +11,12 @@
       return true;
     }
     
+    require_once('pikaUser.php');
     require_once(getcwd() . '-custom/extensions/google_drive_connector/index.php');
     require_once(getcwd() . '-custom/extensions/create_tickler/config.php');
 
-    $tickler = new PikaDrive('nbassani');
+    $auth_row = pikaAuth::getInstance()->getAuthRow();
+    $tickler = new PikaDrive($auth_row['username']);
 
     $event = $tickler->createEvent(
       $activity['tickler_email'],

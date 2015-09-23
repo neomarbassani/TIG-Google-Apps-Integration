@@ -33,7 +33,19 @@ class PikaDrive {
       file_put_contents($tokenPath, $this->token);
     }else{
       if(file_exists($tokenPath)){
-        $this->token = file_get_contents($tokenPath);
+        $token = json_decode(file_get_contents($tokenPath),true);
+
+        if((time() - $token['expires_in']) > $token['created']){
+          $this->gClient->refreshToken($token['refresh_token']);
+          $refreshed = json_decode($this->gClient->getAccessToken(),true);
+
+          $token['access_token'] = $refreshed['access_token'];
+          $token['created'] = $refreshed['created'];
+          $token['expires_in'] = $refreshed['expires_in'];
+          file_put_contents($tokenPath, json_encode($token));
+        }
+
+        $this->token = json_encode($token);
         return true;
       }
     }
@@ -119,6 +131,7 @@ class PikaDrive {
       $q = self::generateQueryString($q, "trashed = ?", "false");
 
     $parameters['q'] = $q;
+    $parameters['maxResults'] = '1000';
 
     $service = new Google_DriveService($this->gClient);
     $files = $service->files->listFiles($parameters);
