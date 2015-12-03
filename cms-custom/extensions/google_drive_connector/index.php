@@ -1,47 +1,60 @@
 <?php
 require_once 'google-api-php-client/src/Google_Client.php';
 require_once 'google-api-php-client/src/contrib/Google_DriveService.php';
+require_once 'google-api-php-client/src/contrib/Google_CalendarService.php';
 require_once 'google_config.php';
 
 $url_array = explode('?', 'https://'.$_SERVER ['HTTP_HOST'].$_SERVER['REQUEST_URI']);
 define("URL", $url_array[0]);
+define("TOKENS_PATH", dirname(__FILE__) . '/' . "tokens/");
 
 class PikaDrive {
   private $gClient;
   private $token;
+  private $tokenPath = TOKENS_PATH;
 
   function __construct($username = null){
     $this->gClient = new Google_Client();
     $this->gClient->setClientId(CLIENT_ID);
     $this->gClient->setClientSecret(CLIENT_SECRET);
     $this->gClient->setRedirectUri(URL);
-    $this->gClient->setScopes(array('https://www.googleapis.com/auth/drive'));
+    $this->gClient->setScopes(array('https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/calendar'));
 
     if($username != null && self::setToken($username)){
       self::authenticate();
     }
   }
 
-  function setToken($username, $token = ''){
-	$clean_token = mysql_real_escape_string($token);
-	$clean_username = mysql_real_escape_string($username);
-	
-    if(isset($token) && !empty($token)){
-      $this->token = $this->gClient->authenticate($token);
-      $result = mysql_query("UPDATE users SET google_drive_token='{$clean_token}' WHERE username='{$clean_username}'");
+  function setToken($username, $authToken = ''){
+    $tokenPath = $this->tokenPath . $username;
+
+    if(isset($authToken) && !empty($authToken)){
+      $this->token = $this->gClient->authenticate($authToken);
+      file_put_contents($tokenPath, $this->token);
     }else{
-      $result = mysql_query("SELECT google_drive_token FROM users WHERE username='{$clean_username}'");
-      $row = mysql_fetch_assoc($result);
-      $this->token = $row['google_drive_token'];
-      return true;
+      if(file_exists($tokenPath)){
+        $token = json_decode(file_get_contents($tokenPath),true);
+
+        if((time() - $token['expires_in']) > $token['created']){
+          $this->gClient->refreshToken($token['refresh_token']);
+          $refreshed = json_decode($this->gClient->getAccessToken(),true);
+
+          $token['access_token'] = $refreshed['access_token'];
+          $token['created'] = $refreshed['created'];
+          $token['expires_in'] = $refreshed['expires_in'];
+          file_put_contents($tokenPath, json_encode($token));
+        }
+
+        $this->token = json_encode($token);
+        return true;
+      }
     }
 
     return false;
   }
 
   function unauthorize($username){
-	$clean_username = mysql_real_escape_string($username);
-    $result = mysql_query("UPDATE users SET google_drive_token=NULL WHERE username='{$clean_username}'");
+    unlink($this->tokenPath . $username);
   }
 
   function authenticate(){
@@ -118,6 +131,7 @@ class PikaDrive {
       $q = self::generateQueryString($q, "trashed = ?", "false");
 
     $parameters['q'] = $q;
+    $parameters['maxResults'] = '1000';
 
     $service = new Google_DriveService($this->gClient);
     $files = $service->files->listFiles($parameters);
@@ -126,15 +140,40 @@ class PikaDrive {
   }
   
   function isAuthenticated($username){
-	$clean_username = mysql_real_escape_string($username);
-    $result = mysql_query("SELECT google_drive_token FROM users WHERE username='{$clean_username}' AND google_drive_token IS NOT NULL");
-    
-    if (mysql_num_rows($result) == 1)
-    {
-	    return true;
-    }
+    $tokenPath = $this->tokenPath . $username;
 
-    return false;
+  	return file_exists($tokenPath);
   }
 
+  function createEvent($to, $summary, $description, $startDate, $endDate = null){
+    $optParams = array(
+      'sendNotifications' => TRUE
+    );
+
+    $event = new Google_Event(); 
+    $event->setSummary($summary);
+    $event->setDescription($description);
+    
+    $start = new Google_EventDateTime();
+    $start->setDateTime($startDate);
+    $event->setStart($start);
+
+    if($endDate == null){
+      $endDate = $startDate;
+    }
+    $end = new Google_EventDateTime();
+    $end->setDateTime($endDate);
+    $event->setEnd($end);
+
+    $attendees = Array();
+    foreach ($to as $e) {
+      $g_ea = new Google_EventAttendee();
+      $g_ea->setEmail($e);
+      $attendees[] = $g_ea;
+    }
+    $event->setAttendees($attendees);
+
+    $service = new Google_CalendarService($this->gClient);
+    return $service->events->insert('primary', $event, $optParams);
+  }
 }
